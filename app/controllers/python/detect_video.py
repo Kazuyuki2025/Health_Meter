@@ -6,6 +6,8 @@ import csv
 import datetime
 from argparse import RawTextHelpFormatter
 import math
+import json
+import torch
 
 COLOR = (0, 255, 0)
 VAR_THICKNESS = 20
@@ -220,4 +222,16 @@ if output_file:
     writer.release()
 
 cv2.destroyAllWindows()
+final_boxes = []
+for obj_id, averages in averaged_results.items():
+    # averages が Tensor の可能性に備えて明示的に float 変換
+    if isinstance(averages, torch.Tensor):
+        averages = averages.tolist()
+    final_boxes.append({
+        "id": int(obj_id),
+        "averages": [float(a) for a in averages]
+    })
+
+# ここで json.dumps が確実に通る
+print("Bounding Box Data:", json.dumps(final_boxes))
 print("---end---")
