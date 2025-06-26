@@ -1,13 +1,20 @@
 <h1 class="text-center my-4">動画をアップロード</h1>
 
+<% if flash[:notice] %>
+  <div class="mt-2 mb-4 p-2 border-2 border-red-500 border-dashed">
+    <h2 class="text-red-500 text-center"><%= flash[:notice] %></h2>
+  </div>
+<% end %>
+<% if flash[:output_image_url] %>
+<img src="<%= flash[:output_image_url] %>" alt="YOLO解析結果" style="max-width: 100%; height: auto;">
+<% end %>
+
 <div class="d-flex justify-content-center align-items-center vh-100">
   <div id="drop-zone" class="drop-zone border rounded shadow p-5 text-center">
     <p id="drop-zone-text" class="mb-3">動画ファイルをドラッグ＆ドロップするか、クリックして選択してください</p>
     <%= form_with url: inputs_path, local: true, html: { multipart: true, id: "upload-form" } do |form| %>
       <%= form.file_field :video_file, accept: 'video/*', id: "file-input", class: "form-control d-none" %>
-      <div>
-        <%= form.submit "アップロード", id: "submit-button", class: "btn btn-success btn-lg mt-3 d-none" %>
-      </div>
+      <%= form.submit "アップロード", id: "submit-button", class: "btn btn-success btn-lg mt-3 d-none" %>
     <% end %>
   </div>
 </div>

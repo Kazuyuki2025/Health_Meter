@@ -1,5 +1,5 @@
 Video.create!([
-  {path: "video/video_test_1.mp4"},
+  {path: "video/aaa.mp4"},
   {path: "video/video_test_2.mp4"},
   {path: "video/video_test_3.mp4"},
   {path: "video/video_test_4.mp4"},
@@ -19,10 +19,10 @@ Video.create!([
   {path: "video/video_test_18.mp4"},
   {path: "video/video_test_19.mp4"},
   {path: "video/video_test_20.mp4"},
-  {path: "video/video_test_restrict.mp4"},
+  {path: "video/20240416_123931.mp4"},
   {path: "video/20240917_160217.mp4"},
   {path: "video/20240917_160217.mp4"},
-  {path: "video/20240917_160217.mp4"}
+  {path: "video/aaac.mp4"}
 ])
 Performer.create!([
   {num: 1, name: "三宅 貴義"},
@@ -35,7 +35,12 @@ Performer.create!([
   {num: 8, name: "大槻 篤史"},
   {num: 9, name: "平田 諒"},
   {num: 10, name: "下稲 優大"},
-  {num: 11, name: "藤原 瑛悟"}
+  {num: 11, name: "藤原 瑛悟"},
+  {num: 12, name: "上田 貫太"},
+  {num: 13, name: "加地 竜也"},
+  {num: 14, name: "世古 和之"},
+  {num: 15, name: "寺岡 久騎"},
+  {num: 16, name: "丸尾 隆之介"},
 ])
 Performance.create!([
   {date: "2024-06-10", performer_id: 3, video_id: 1},
@@ -72,7 +77,7 @@ Performance.create!([
   {date: "2024-07-09", performer_id: 2, video_id: 2},
   {date: "2024-07-13", performer_id: 2, video_id: 3},
   {date: "2024-06-04", performer_id: 2, video_id: 4},
-  {date: "2024-07-23", performer_id: 2, video_id: 5},
+  {date: "2024-07-23", performer_id: 2, video_id: 24},
   {date: "2024-06-28", performer_id: 2, video_id: 6},
   {date: "2024-07-01", performer_id: 2, video_id: 7},
   {date: "2024-06-05", performer_id: 2, video_id: 8},
@@ -148,8 +153,8 @@ Performance.create!([
   {date: "2024-06-05", performer_id: 11, video_id: 8},
   {date: "2024-06-06", performer_id: 11, video_id: 9},
   {date: "2024-06-07", performer_id: 11, video_id: 10},
-  {date: "2024-12-01", performer_id: 1, video_id: 21},
-  {date: "2024-12-01", performer_id: 2, video_id: 21},
+  {date: "2025-06-21", performer_id: 1, video_id: 1},
+  {date: "2024-12-01", performer_id: 2, video_id: 24},
   {date: "2024-12-01", performer_id: 3, video_id: 21},
   {date: "2024-12-01", performer_id: 4, video_id: 21},
   {date: "2024-12-01", performer_id: 5, video_id: 21},

@@ -25,8 +25,10 @@ class UnhealthyController < ApplicationController
       }
     end
     latest_performance = performer.performances.order(date: :desc).first
+    puts "\nLatest Performance: #{latest_performance.inspect}\n"
     if latest_performance&.video
       @video_path = unhealthy_video_path(filename: File.basename(latest_performance.video.path, '.*'))
+      puts "\nVideo Path: #{@video_path}\n"
     else
       @video_path = nil
     end
@@ -50,12 +52,12 @@ class UnhealthyController < ApplicationController
   def video
     filename = params[:filename]
     video_path = Rails.root.join('public', 'video', "#{filename}.mp4")
+    puts "---------------\nVideo Path: #{video_path}\n"
     if File.exist?(video_path)
+      puts "---------------\nVideo file exists: #{video_path}\n"
       send_file video_path, type: 'video/mp4', disposition: 'inline'
     else
       render plain: '動画が見つかりませんでした', status: :not_found
     end
   end
 end
-
-

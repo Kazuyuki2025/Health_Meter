@@ -9,5 +9,3 @@ Rails.application.routes.draw do
   root 'home#index'
   get 'input/index', to: 'inputs#index', as: 'input_index'
 end
-
-
