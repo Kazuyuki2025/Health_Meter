@@ -94,7 +94,7 @@ GEM
       dotenv (= 3.1.4)
       railties (>= 6.1)
     erubi (1.13.0)
-    ffi (1.17.0-x86_64-darwin)
+    ffi (1.17.0)
     ffi-compiler (1.3.2)
       ffi (>= 1.15.5)
       rake
@@ -140,6 +140,7 @@ GEM
     mini_mime (1.1.5)
     minitest (5.25.4)
     msgpack (1.7.5)
+    multi_json (1.15.0)
     net-imap (0.5.1)
       date
       net-protocol
@@ -151,6 +152,8 @@ GEM
       net-protocol
     nio4r (2.7.4)
     nokogiri (1.16.8-x86_64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.16.8-x86_64-linux)
       racc (~> 1.4)
     psych (5.2.1)
       date
@@ -198,6 +201,9 @@ GEM
       io-console (~> 0.5)
     rexml (3.3.9)
     rubyzip (2.3.2)
+    seed_dump (3.3.1)
+      activerecord (>= 4)
+      activesupport (>= 4)
     selenium-webdriver (4.27.0)
       base64 (~> 0.2)
       logger (~> 1.4)
@@ -212,8 +218,11 @@ GEM
       activesupport (>= 6.1)
       sprockets (>= 3.0.0)
     sqlite3 (1.7.3-x86_64-darwin)
+    sqlite3 (1.7.3-x86_64-linux)
     stimulus-rails (1.3.4)
       railties (>= 6.0.0)
+    streamio-ffmpeg (3.0.2)
+      multi_json (~> 1.8)
     stringio (3.1.2)
     thor (1.3.2)
     timeout (0.4.2)
@@ -237,6 +246,7 @@ GEM
 
 PLATFORMS
   x86_64-darwin-21
+  x86_64-linux
 
 DEPENDENCIES
   bootsnap
@@ -248,10 +258,12 @@ DEPENDENCIES
   jbuilder
   puma (~> 5.0)
   rails (~> 7.0.8, >= 7.0.8.6)
+  seed_dump
   selenium-webdriver
   sprockets-rails
   sqlite3 (~> 1.4)
   stimulus-rails
+  streamio-ffmpeg
   turbo-rails
   tzinfo-data
   web-console

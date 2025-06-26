@@ -6,8 +6,6 @@ import csv
 import datetime
 from argparse import RawTextHelpFormatter
 import math
-import json
-import torch
 
 COLOR = (0, 255, 0)
 VAR_THICKNESS = 20
@@ -102,103 +100,111 @@ if output_file:
 
 first_frame_saved = False
 frame_baseline_limit = 10
+frame_skip = 5  # ここで何フレームごとに処理するか指定
 
 for i in range(frame_count):
     ret, frame = cap.read()
     played_frame = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
-    if ret:
-        results = model.track(frame, verbose=False, persist=True, classes=[0], tracker="bytetrack.yaml")
-        names = results[0].names
-        classes = results[0].boxes.cls
-        boxes = results[0].boxes
-        annotatedFrame = results[0].plot()
+    if not ret:
+        break
 
-        if not first_frame_saved:
-            cv2.imwrite(output_image, annotatedFrame)
-            first_frame_saved = True
+    # フレームを間引く
+    if i % frame_skip != 0:
+        continue
 
-        current_ids = set()
-        current_coordinates = {}
-        for box, cls in zip(boxes, classes):
-            x1, x2, y1, y2 = [int(i) for i in box.xyxy[0]]
-            name = names[int(cls)]
-            if box.id is not None:
-                ids = int(box.id[0])
+    # ここから下は元の処理
+    results = model.track(frame, verbose=False, persist=True, classes=[0], tracker="bytetrack.yaml")
+    names = results[0].names
+    classes = results[0].boxes.cls
+    boxes = results[0].boxes
+    annotatedFrame = results[0].plot()
+
+    if not first_frame_saved:
+        cv2.imwrite(output_image, annotatedFrame)
+        first_frame_saved = True
+
+    current_ids = set()
+    current_coordinates = {}
+    for box, cls in zip(boxes, classes):
+        x1, x2, y1, y2 = [int(i) for i in box.xyxy[0]]
+        name = names[int(cls)]
+        if box.id is not None:
+            ids = int(box.id[0])
+        else:
+            continue
+
+        # During the first 10 frames, establish baseline IDs
+        if played_frame - start_frame < frame_baseline_limit:
+            baseline_ids.add(ids)
+
+        # If new ID appears after the baseline frames
+        if ids not in baseline_ids:
+            closest_id = None
+            closest_distance = float('inf')
+            for prev_id, prev_coords in previous_coordinates.items():
+                distance = math.sqrt((x1 - prev_coords[0])**2 + (y1 - prev_coords[2])**2)
+                if distance < closest_distance and prev_id not in current_ids:
+                    closest_id = prev_id
+                    closest_distance = distance
+
+            if closest_id is not None:
+                ids = closest_id
             else:
+                print(f"Frame {played_frame}: Over-detection, skipping ID {ids}")
                 continue
 
-            # During the first 10 frames, establish baseline IDs
-            if played_frame - start_frame < frame_baseline_limit:
-                baseline_ids.add(ids)
+        current_ids.add(ids)
+        current_coordinates[ids] = (x1, x2, y1, y2)
 
-            # If new ID appears after the baseline frames
-            if ids not in baseline_ids:
-                closest_id = None
-                closest_distance = float('inf')
-                for prev_id, prev_coords in previous_coordinates.items():
-                    distance = math.sqrt((x1 - prev_coords[0])**2 + (y1 - prev_coords[2])**2)
-                    if distance < closest_distance and prev_id not in current_ids:
-                        closest_id = prev_id
-                        closest_distance = distance
+        velocity[ids][0], velocity[ids][1], velocity[ids][2], velocity[ids][3] = \
+            abs(x1-coordinate[ids][0]), abs(x2-coordinate[ids][1]), abs(y1-coordinate[ids][2]), abs(y2-coordinate[ids][3])
 
-                if closest_id is not None:
-                    ids = closest_id
-                else:
-                    print(f"Frame {played_frame}: Over-detection, skipping ID {ids}")
-                    continue
+        match detect_type:
+            case 1:
+                evaluation = abs(velocity[ids][0] - pre_velocity[ids][0]) + abs(velocity[ids][1] - pre_velocity[ids][1]) + abs(velocity[ids][2] \
+                             - pre_velocity[ids][2]) + abs(velocity[ids][3] - pre_velocity[ids][3])
+            case 2:
+                evaluation = abs(velocity[ids][0] - pre_velocity[ids][0]) + abs(velocity[ids][1] - pre_velocity[ids][1]) + abs(velocity[ids][2] \
+                             - pre_velocity[ids][2]) + abs(velocity[ids][3] - pre_velocity[ids][3])
+            case _:
+                print("Please select a specific type")
 
-            current_ids.add(ids)
-            current_coordinates[ids] = (x1, x2, y1, y2)
+        # Mark outlier if evaluation exceeds 30
+        if evaluation > 100:
+            evaluation = 0.00
 
-            velocity[ids][0], velocity[ids][1], velocity[ids][2], velocity[ids][3] = \
-                abs(x1-coordinate[ids][0]), abs(x2-coordinate[ids][1]), abs(y1-coordinate[ids][2]), abs(y2-coordinate[ids][3])
+        coordinate[ids] = box.xyxy[0]
+        activity_average[ids] = activity_average[ids] + evaluation
 
-            match detect_type:
-                case 1:
-                    evaluation = abs(velocity[ids][0] - pre_velocity[ids][0]) + abs(velocity[ids][1] - pre_velocity[ids][1]) + abs(velocity[ids][2] \
-                                 - pre_velocity[ids][2]) + abs(velocity[ids][3] - pre_velocity[ids][3])
-                case 2:
-                    evaluation = abs(velocity[ids][0] - pre_velocity[ids][0]) + abs(velocity[ids][1] - pre_velocity[ids][1]) + abs(velocity[ids][2] \
-                                 - pre_velocity[ids][2]) + abs(velocity[ids][3] - pre_velocity[ids][3])
-                case _:
-                    print("Please select a specific type")
+        # Store results for averaging
+        if played_frame >= 415:
+            if ids not in analysis_results:
+                analysis_results[ids] = []
+            analysis_results[ids].append(evaluation)
 
-            # Mark outlier if evaluation exceeds 30
-            if evaluation > 100:
-                evaluation = 0.00
+        if played_frame >= start_frame+2:
+            print(f"Frame {played_frame-2}: Evaluation = {'{:.2f}'.format(evaluation)}, ID = {ids}")
 
-            coordinate[ids] = box.xyxy[0]
-            activity_average[ids] = activity_average[ids] + evaluation
+        if output_file:
+            LINE_START = (int(x1), int(y2))
+            LINE_FINISH = (int(x1), int(y2-evaluation*4))
+            ACTIVITY_COORDINATE = (x1+15, y2-10)
 
-            # Store results for averaging
-            if played_frame >= 415:
-                if ids not in analysis_results:
-                    analysis_results[ids] = []
-                analysis_results[ids].append(evaluation)
+            if played_frame >= start_frame+3:
+                cv2.line(annotatedFrame, pt1=LINE_START, pt2=LINE_FINISH, color=COLOR, thickness=VAR_THICKNESS, lineType=cv2.LINE_4)
+            cv2.putText(annotatedFrame, f"HUMAN ACTIVITY {int(evaluation)}", ACTIVITY_COORDINATE, cv2.FONT_HERSHEY_PLAIN, FONT_SCALE, COLOR, TEXT_THICKNESS, cv2.LINE_AA)
+            writer.write(annotatedFrame)
 
+        if csv_file:
             if played_frame >= start_frame+2:
-                print(f"Frame {played_frame-2}: Evaluation = {'{:.2f}'.format(evaluation)}, ID = {ids}")
+                csv_writer.writerow([played_frame-2, '{:.2f}'.format(evaluation)])
 
-            if output_file:
-                LINE_START = (int(x1), int(y2))
-                LINE_FINISH = (int(x1), int(y2-evaluation*4))
-                ACTIVITY_COORDINATE = (x1+15, y2-10)
-
-                if played_frame >= start_frame+3:
-                    cv2.line(annotatedFrame, pt1=LINE_START, pt2=LINE_FINISH, color=COLOR, thickness=VAR_THICKNESS, lineType=cv2.LINE_4)
-                cv2.putText(annotatedFrame, f"HUMAN ACTIVITY {int(evaluation)}", ACTIVITY_COORDINATE, cv2.FONT_HERSHEY_PLAIN, FONT_SCALE, COLOR, TEXT_THICKNESS, cv2.LINE_AA)
-                writer.write(annotatedFrame)
-
-            if csv_file:
-                if played_frame >= start_frame+2:
-                    csv_writer.writerow([played_frame-2, '{:.2f}'.format(evaluation)])
-
-        # Update previous coordinates
-        for id in baseline_ids:
-            if id not in current_ids:
-                # Retain the last known position of IDs not detected in the current frame
-                current_coordinates[id] = previous_coordinates.get(id, (0, 0, 0, 0))
-        previous_coordinates = current_coordinates
+    # Update previous coordinates
+    for id in baseline_ids:
+        if id not in current_ids:
+            # Retain the last known position of IDs not detected in the current frame
+            current_coordinates[id] = previous_coordinates.get(id, (0, 0, 0, 0))
+    previous_coordinates = current_coordinates
 
 # Calculate averages for the last segments
 averaged_results = {}
@@ -222,16 +228,4 @@ if output_file:
     writer.release()
 
 cv2.destroyAllWindows()
-final_boxes = []
-for obj_id, averages in averaged_results.items():
-    # averages が Tensor の可能性に備えて明示的に float 変換
-    if isinstance(averages, torch.Tensor):
-        averages = averages.tolist()
-    final_boxes.append({
-        "id": int(obj_id),
-        "averages": [float(a) for a in averages]
-    })
-
-# ここで json.dumps が確実に通る
-print("Bounding Box Data:", json.dumps(final_boxes))
 print("---end---")

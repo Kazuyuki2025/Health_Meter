@@ -75,3 +75,5 @@ end
 gem "http", "~> 5.2"
 
 gem "dotenv-rails", "~> 3.1"
+
+gem 'streamio-ffmpeg'

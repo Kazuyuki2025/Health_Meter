@@ -33,3 +33,10 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+
+/public/video/*.mp4
+/analysis/*.mp4
+/analysis/*.jpg
+/analysis/*.csv
+/public/output/*.jpg
+.env

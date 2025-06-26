@@ -14,6 +14,15 @@ class InputsController < ApplicationController
     FileUtils.mkdir_p(File.dirname(save_path))
     File.open(save_path, 'wb') { |file| file.write(uploaded_file.read) }
 
+    # コーデック判定と変換
+    movie = FFMPEG::Movie.new(save_path.to_s)
+    puts "---------------\nMovie Codec: #{movie.video_codec}\n"
+    if movie.video_codec == "mpeg4"
+    h264_path = save_path.to_s.sub(/\.mp4\z/, '_h264.mp4')
+    movie.transcode(h264_path, %w(-vcodec libx264 -acodec aac))
+    FileUtils.mv(h264_path, save_path) # 上書き
+    end
+
     # パスをデータベースに保存
     video = Video.new(path: "video/#{uploaded_file.original_filename}")
     if video.save
@@ -30,15 +39,17 @@ class InputsController < ApplicationController
 
       result = `python3 #{script_path} #{video_path} #{output_image_path}`
       puts "\n4\n"
+      puts "Python script output: #{result}"
 
       # JSON形式でPythonから返されたデータを処理
       begin
-        bounding_boxes = JSON.parse(result.match(/Bounding Box Data: (.+)/)[1])
-        flash[:notice] += "<br>YOLO解析が完了しました。画像を確認してください。".html_safe
+        #bounding_boxes = JSON.parse(result.match(/Bounding Box Data: (.+)/)[0])
+        flash[:notice] += "YOLO解析が完了しました。画像を確認してください。".html_safe
         puts "\n5\n"
         @output_image_url = "/output/#{File.basename(output_image_path)}"
+        flash[:output_image_url] = @output_image_url
         puts "\n@output_image_url: #{@output_image_url}\n"
-        @bounding_boxes = bounding_boxes
+        #@bounding_boxes = bounding_boxes
       rescue JSON::ParserError => e
         flash[:alert] = "解析結果の読み込みに失敗しました: #{e.message}"
         puts "\n6\n"
@@ -57,6 +68,4 @@ class InputsController < ApplicationController
     Rails.logger.error "Flash Alert: #{flash[:alert]}"
     redirect_to inputs_path
   end
-
-  
 end
