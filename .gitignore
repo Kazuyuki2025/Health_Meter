@@ -34,9 +34,15 @@
 # Ignore master key for decrypting credentials and more.
 /config/master.key
 
-/public/
-/analysis/
+/public/video/*.mp4
+/analysis/*.mp4
+/analysis/*.jpg
+/analysis/*.csv
 /analysis/input_video/*.mp4
 /analysis/output_video/*.mp4
+/public/output/*.jpg
+/public/output/*.csv
+/public/*.jpeg
+/public/*.png
 .env
 /venv/
