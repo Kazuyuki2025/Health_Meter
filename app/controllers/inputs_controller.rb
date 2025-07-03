@@ -14,18 +14,20 @@ class InputsController < ApplicationController
     FileUtils.mkdir_p(File.dirname(save_path))
     File.open(save_path, 'wb') { |file| file.write(uploaded_file.read) }
 
-    # コーデック判定と変換
+    # コーデックの判定，"H.264"出でない場合は変換
     movie = FFMPEG::Movie.new(save_path.to_s)
     puts "---------------\nMovie Codec: #{movie.video_codec}\n"
-    if movie.video_codec == "mpeg4"
-    h264_path = save_path.to_s.sub(/\.mp4\z/, '_h264.mp4')
-    movie.transcode(h264_path, %w(-vcodec libx264 -acodec aac))
-    FileUtils.mv(h264_path, save_path) # 上書き
+    if movie.video_codec != "h264"
+      h264_path = save_path.to_s.sub(/\.mp4\z/, '_h264.mp4')
+      movie.transcode(h264_path, %w(-vcodec libx264 -acodec aac -movflags +faststart))
+      FileUtils.mv(h264_path, save_path) # 上書き
     end
 
     # パスをデータベースに保存
     video = Video.new(path: "video/#{uploaded_file.original_filename}")
+    puts "\nVideo ID: #{flash[:video_id]}\n"
     if video.save
+      flash[:video_id] = video.id
       flash[:notice] = "動画がアップロードされ、データベースに保存されました。"
       Rails.logger.info "Flash Notice: #{flash[:notice]}"
 
@@ -48,8 +50,7 @@ class InputsController < ApplicationController
         puts "\n5\n"
         @output_image_url = "/output/#{File.basename(output_image_path)}"
         flash[:output_image_url] = @output_image_url
-        puts "\n@output_image_url: #{@output_image_url}\n"
-        #@bounding_boxes = bounding_boxes
+        #puts "\n@output_image_url: #{@output_image_url}\n"
       rescue JSON::ParserError => e
         flash[:alert] = "解析結果の読み込みに失敗しました: #{e.message}"
         puts "\n6\n"

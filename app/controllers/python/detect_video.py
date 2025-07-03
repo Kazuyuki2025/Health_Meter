@@ -100,7 +100,7 @@ if output_file:
 
 first_frame_saved = False
 frame_baseline_limit = 10
-frame_skip = 5  # ここで何フレームごとに処理するか指定
+frame_skip = 1000  # ここで何フレームごとに処理するか指定
 
 for i in range(frame_count):
     ret, frame = cap.read()

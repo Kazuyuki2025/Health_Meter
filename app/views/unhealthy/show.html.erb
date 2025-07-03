@@ -5,7 +5,7 @@
 
 <% if @video_path.present? %>
   <div class="video-container">
-    <video id="performance-video" controls autoplay muted preload="metadata" width="640" height="360">
+    <video id="performance-video" controls muted preload="metadata" width="640" height="360">
       <source src="<%= @video_path %>" type="video/mp4">
       このブラウザは video タグをサポートしていません。
     </video>
@@ -44,45 +44,37 @@ const video = document.getElementById("performance-video");
 const totalActivities = 13;
 const initialSkipDuration = 13;
 let videoDuration = 0;
+let shouldPlayAfterSeek = false;
 
 video.addEventListener("loadedmetadata", () => {
   videoDuration = video.duration;
-  console.log("Video metadata loaded. Total Duration:", videoDuration);
-
   const effectiveDuration = videoDuration - initialSkipDuration;
-  if (effectiveDuration <= 0) {
-    console.error("Effective duration is too short. Cannot divide.");
-    return;
-  }
-
-  console.log("Effective Duration (without first 13 seconds):", effectiveDuration);
+  if (effectiveDuration <= 0) return;
 
   const playButtons = document.querySelectorAll(".play-activity");
-  console.log("Play buttons found:", playButtons.length);
-
   playButtons.forEach(button => {
     button.addEventListener("click", () => {
       const index = parseInt(button.dataset.index, 10) - 1;
-      console.log("Button clicked. Index:", index);
-
       if (effectiveDuration > 0) {
         const segmentDuration = effectiveDuration / totalActivities;
         const startTime = initialSkipDuration + (index * segmentDuration);
-        console.log("Segment duration:", segmentDuration);
-        console.log("Calculated start time:", startTime);
 
+        shouldPlayAfterSeek = true;
+        video.pause();
         video.currentTime = startTime;
-        video.play();
-        console.log("Video playback started at:", startTime);
-      } else {
-        console.warn("Effective video duration is 0. Cannot calculate start time.");
       }
     });
   });
 });
 
+video.addEventListener("seeked", () => {
+  if (shouldPlayAfterSeek) {
+    video.play();
+    shouldPlayAfterSeek = false;
+  }
+});
+
 video.addEventListener("error", (e) => {
   console.error("Video error:", e);
 });
-
 </script>
