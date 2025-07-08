@@ -8,4 +8,5 @@ Rails.application.routes.draw do
   get 'input/index', to: 'inputs#index', as: 'input_index'
   resources :inputs
   resources :performers
+  resources :performances, only: [:create]
 end

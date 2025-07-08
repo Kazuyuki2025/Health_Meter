@@ -6,6 +6,7 @@ import csv
 import datetime
 from argparse import RawTextHelpFormatter
 import math
+import json
 
 COLOR = (0, 255, 0)
 VAR_THICKNESS = 20
@@ -100,7 +101,7 @@ if output_file:
 
 first_frame_saved = False
 frame_baseline_limit = 10
-frame_skip = 1000  # ここで何フレームごとに処理するか指定
+frame_skip = 1  # ここで何フレームごとに処理するか指定
 
 for i in range(frame_count):
     ret, frame = cap.read()
@@ -220,7 +221,7 @@ for obj_id, evaluations in analysis_results.items():
 
 print("--- Averages per segment ---")
 for obj_id, averages in averaged_results.items():
-    print(f"ID: {obj_id}, Averages: {averages}")
+   print(f"ID: {obj_id}, Averages: {averages}")
 
 if csv_file:
     csv_file.close()
@@ -229,3 +230,6 @@ if output_file:
 
 cv2.destroyAllWindows()
 print("---end---")
+
+safe_results = {str(obj_id): [float(v) for v in averages] for obj_id, averages in averaged_results.items()}
+print(json.dumps({"averaged_results": safe_results}))

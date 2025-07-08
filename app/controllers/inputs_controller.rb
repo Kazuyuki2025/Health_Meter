@@ -45,7 +45,23 @@ class InputsController < ApplicationController
 
       # JSON形式でPythonから返されたデータを処理
       begin
-        #bounding_boxes = JSON.parse(result.match(/Bounding Box Data: (.+)/)[0])
+        # 出力の中からJSON行だけを抜き出す
+        json_line = result.lines.find { |line| line.strip.start_with?('{') }
+
+        if json_line
+          data = JSON.parse(json_line)
+          averaged_results = data["averaged_results"]
+          puts "Averaged Results: #{averaged_results.inspect}"
+
+        # averaged_resultsを一時ファイルに保存
+          tmp_path = Rails.root.join('tmp', "averaged_results_#{SecureRandom.hex(8)}.json")
+          File.write(tmp_path, averaged_results.to_json)
+          session[:averaged_results_path] = tmp_path.to_s
+        else
+          flash[:alert] = "Pythonの出力からJSONを取得できませんでした。"
+          Rails.logger.error "Flash Alert: #{flash[:alert]}"
+        end
+
         flash[:notice] += "YOLO解析が完了しました。画像を確認してください。".html_safe
         puts "\n5\n"
         @output_image_url = "/output/#{File.basename(output_image_path)}"
