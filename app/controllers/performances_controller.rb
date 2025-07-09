@@ -8,14 +8,13 @@ class PerformancesController < ApplicationController
     if performer_id.present? && video_id.present?
       performance = Performance.create(performer_id: performer_id, video_id: video_id, date: Date.today)
       if performance.persisted?
-        # averaged_resultsがあればActivityも作成
         if averaged_results_path && File.exist?(averaged_results_path)
           averaged_results = JSON.parse(File.read(averaged_results_path))
           averaged_results.each do |obj_id, values|
             values.each_with_index do |value, idx|
               Activity.create!(
                 performance_id: performance.id,
-                category: idx+1, # 区間番号や用途に応じて
+                category: idx+1, 
                 value: value
               )
             end
